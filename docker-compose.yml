@@ -1,0 +1,9 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    platform: linux/amd64
+    image: bsun185/scratchtrain
+    environment:
+      COMET_API_KEY: "UFRx637DQWzy7AYJlPv8Fhc8e"
