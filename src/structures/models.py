@@ -85,7 +85,6 @@ class SwiGLU(nn.Module):
     def forward(self, x: torch.Tensor):
         return self.w2(self.activation(self.w1(x)) * self.w3(x))
 
-
 class RotaryPositionEmbedding(nn.Module):
     def __init__(self, theta: float, d_k: int, max_seq_len: int, device = None):
         super().__init__()
@@ -100,7 +99,7 @@ class RotaryPositionEmbedding(nn.Module):
         sines = torch.sin(theta_i_k).repeat_interleave(2, dim=-1).to(device)
         self.register_buffer("cosines", cosines, persistent=False)
         self.register_buffer("sines", sines, persistent=False)
-    
+
     def forward(self, x: torch.Tensor, token_positions: torch.Tensor) -> torch.Tensor:
         # we are assuming this as the input from the tests are wack
         assert len(token_positions.shape) == 1
@@ -119,9 +118,9 @@ def scaled_dot_product_attention(Q: torch.Tensor, K: torch.Tensor, V: torch.Tens
     pre_softmax = einx.dot("... q [d_k], ... k [d_k] -> ... q k", Q, K) / math.sqrt(Q.shape[-1])
     if mask is None:
         mask = torch.full(pre_softmax.shape, True)
-    # NEED TO MAKE THIS DIFFERENTIABLE
     masked = einx.where("... d e, ... d e, ", mask, pre_softmax, -float("Inf"))
-    post_softmax = softmax(masked, dim=-1)
+    # this is simply way faster than a custom implementation: fused
+    post_softmax = nn.functional.softmax(masked, dim=-1)
     return einx.dot("... q [k], ... [k] d_v -> ... q d_v", post_softmax, V)
 
 class MultiHeadSelfAttention(nn.Module):
@@ -156,10 +155,12 @@ class MultiHeadSelfAttention(nn.Module):
 
         if rope:
             if token_positions is None:
-                token_positions = torch.arange(sequence_length).to(self.device)
+                token_positions = torch.arange(sequence_length, device=self.device)
             assert self.r is not None
 
-        mask = torch.tril(torch.ones(sequence_length, sequence_length)).to(device=self.device, dtype=torch.bool)
+        mask = torch.tril(torch.ones(sequence_length, sequence_length, 
+                                     device=self.device,
+                                     dtype=torch.bool))
         if rope:
             res = einx.vmap(
                 "... [s] (h [c]), ... [s] (h [c]), ... [s] (h [c]) -> ... [s] (h [c])", 

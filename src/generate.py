@@ -31,7 +31,7 @@ def get_next_token(logits: torch.Tensor, temperature=1.0, top_p: float=0.9):
     return sorted_indices.gather(dim=-1, index=sample_idx).item()
 
 def generate_text(model: TransformerLM, prefix: list[int], end_id: int,
-                  max_token_generate: int=1000):
+                  max_token_generate: int=100):
 
     prefix_tensor = torch.tensor(prefix)
     
@@ -55,7 +55,7 @@ def get_prefixes_and_generate(model: TransformerLM, device: str):
     # just for inference
     torch.set_default_device(device)
 
-    prefixes = ['Once upon a time, there was a boy named Hanson.']
+    prefixes = ['There once was a greedy, greedy boy who played with a ball, and his name was Bitch']
     with open(f"{OUTPUT_PATH}/vocab/vocab_{BPE_FILE_NAME}.pkl", 'rb') as f:
         vocab = pickle.load(f)
     with open(f"{OUTPUT_PATH}/merges/merges_{BPE_FILE_NAME}.pkl", 'rb') as f:
@@ -79,10 +79,3 @@ def get_prefixes_and_generate(model: TransformerLM, device: str):
         print(f"Number of tokens: {len(encoded_string)}")
     
     print(f"Seconds: {time.time() - start_inference}")
-
-# this is just to load the model from comet
-if __name__ == "__main__":
-    from comet_ml import API
-    api = API()
-    api.download_registry_model(workspace='sunbri', registry_name='model_tiny', version='1.6.0',
-                                output_path='models')

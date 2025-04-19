@@ -129,9 +129,7 @@ if __name__ == "__main__":
         device=general_hypers.device
     )
     model.to(general_hypers.device)
-
-    # if not next(model.parameters()).is_cuda:
-    #     sys.exit(0)
+    print(next(model.parameters()).device)
 
     # get the optimizer
     opt = AdamW(
@@ -152,11 +150,10 @@ if __name__ == "__main__":
         iter_num = load_checkpoint(checkpoint_path, model, opt)
 
     if INFERENCE_MODE:
-        # we want to load the model locally from the comet save
-        comet_model = torch.load(f"{BASE_PATH}/models/comet-torch-model (2).pth", map_location='mps')
+        # see download_model.py to see how we download it
+        # we need to change map_location since the model itself was saved as a CUDA model
+        comet_model = torch.load(f"{BASE_PATH}/models/model-data/comet-torch-model.pth", map_location='mps')
         model.load_state_dict(comet_model)
-        #COMET_MODEL_PATH = ""
-        #model.load_state_dict(load_model(COMET_MODEL_PATH))
         get_prefixes_and_generate(model, general_hypers.device)
     else:
         # set up comet_ml for logging
@@ -206,14 +203,14 @@ if __name__ == "__main__":
                     val_loss = total_val_loss / general_hypers.eval_iters
                     experiment.log_metric('val_loss', val_loss)
 
-                if iter_num % 10000 == 0:
-                    model_checkpoint = {
-                        "model_state_dict": model.state_dict(),
-                        "optimizer_state_dict": opt.state_dict(),
-                        "iter_num": iter_num,
-                    }
-                    log_model(experiment, model_checkpoint, f"Model_{EXPERIMENT_NAME}")
-                    # save_checkpoint(model, opt, iter_num, checkpoint_path)
+                # if iter_num % 10000 == 0:
+                #     model_checkpoint = {
+                #         "model_state_dict": model.state_dict(),
+                #         "optimizer_state_dict": opt.state_dict(),
+                #         "iter_num": iter_num,
+                #     }
+                #     log_model(experiment, model_checkpoint, f"Model_{EXPERIMENT_NAME}")
+                #     save_checkpoint(model, opt, iter_num, checkpoint_path)
 
                 iter_num += 1
                 if iter_num > general_hypers.max_iters:
