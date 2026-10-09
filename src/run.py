@@ -158,7 +158,7 @@ if __name__ == "__main__":
     else:
         # set up comet_ml for logging
         experiment = comet_ml.start(
-            api_key='UFRx637DQWzy7AYJlPv8Fhc8e',
+            api_key='KEY',
             project_name=PROJECT_NAME,
             workspace=WORKSPACE,
             experiment_config=comet_ml.ExperimentConfig(name=EXPERIMENT_NAME)
